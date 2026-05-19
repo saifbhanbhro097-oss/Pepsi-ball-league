@@ -17,19 +17,15 @@ from kivy.clock import Clock
 from kivy.network.urlrequest import UrlRequest
 import json
 import base64
-import webbrowser  # Needed to open the WhatsApp link safely
+
+# FIX: Cross-platform platform utility instead of 'import webbrowser'
+from kivy.utils import platform
 
 Window.softinput_mode = "resize"
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ONLINE CLOUD CONFIGURATION (COMPLETELY LIVE)
-# ══════════════════════════════════════════════════════════════════════════════
 ONLINE_URL = "https://6a0c1ca85aa893e1015af370.mockapi.io/teams"
 IMGBB_API_KEY = "eaabb841a057bd423251881cfe4296bd"
 
-# ══════════════════════════════════════════════════════════════════════════════
-# THEME COLORS
-# ══════════════════════════════════════════════════════════════════════════════
 C_BG_DARK = (0.04, 0.05, 0.07, 1)       
 C_CARD = (0.09, 0.11, 0.15, 0.95)       
 C_TEXT_WHITE = (1, 1, 1, 1)             
@@ -49,9 +45,6 @@ USER_TEAM = {
     "is_registered": False, "m": 0, "w": 0, "l": 0, "pts": 0, "nrr": "0.000"
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-# REUSABLE UI COMPONENTS
-# ══════════════════════════════════════════════════════════════════════════════
 class CosmicScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -64,18 +57,14 @@ class CosmicScreen(Screen):
         self.bg_rect.pos = self.pos
         self.bg_rect.size = self.size
 
-
 class PatchedTextInput(TextInput):
-    """A standard TextInput that forces phone keyboard backspaces to execute manually if blocked"""
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if keycode[0] == 8 or keycode[1] == 'backspace':
             self.do_backspace()
             return True
         return super().keyboard_on_key_down(window, keycode, text, modifiers)
 
-
 class UppercaseTextInput(PatchedTextInput):
-    """Crash-safe & Erase-friendly Uppercase Input with backspace patches"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.bind(text=self.on_text_change)
@@ -85,7 +74,6 @@ class UppercaseTextInput(PatchedTextInput):
             cursor = self.cursor
             self.text = value.upper()
             self.cursor = cursor
-
 
 class LabeledInput(BoxLayout):
     def __init__(self, label_text, hint_text, force_caps=False, input_type='text', **kwargs):
@@ -147,7 +135,6 @@ class LabeledInput(BoxLayout):
         self.error_lbl.height = dp(0)
         self.height = dp(80)
 
-
 class MenuButton(ButtonBehavior, BoxLayout):
     def __init__(self, title, sub, color=C_ACCENT_BLUE, **kwargs):
         kwargs.setdefault('orientation', 'vertical')
@@ -175,7 +162,6 @@ class MenuButton(ButtonBehavior, BoxLayout):
     def _refresh_ui(self, *args):
         self.bg.pos = self.pos; self.bg.size = self.size
         self.glow.pos = self.pos; self.glow.size = self.size
-
 
 class GridPlayerCard(BoxLayout):
     def __init__(self, role_label, role_color, upload_cb, is_input_mode=True, player_name="", card_height=dp(145), player_img="", **kwargs):
@@ -224,20 +210,12 @@ class GridPlayerCard(BoxLayout):
         self.border.pos = self.pos
         self.border.size = (self.size[0], dp(3))
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SCREENS
-# ══════════════════════════════════════════════════════════════════════════════
 class RegistrationScreen(CosmicScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
         outer_layout = BoxLayout(orientation='vertical', padding=dp(16))
-        
-        # Top Header Bar for custom utility buttons
         top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(35))
         
-        # WhatsApp Contact Button - Positioned Side Left Top (Small)
         whatsapp_btn = Button(
             text="💬 ULFAT DAHRI", 
             font_size=sp(10), 
@@ -250,7 +228,7 @@ class RegistrationScreen(CosmicScreen):
         whatsapp_btn.bind(on_press=self.open_whatsapp_contact)
         
         top_bar.add_widget(whatsapp_btn)
-        top_bar.add_widget(BoxLayout(size_hint_x=1)) # Pushes button completely to the left side
+        top_bar.add_widget(BoxLayout(size_hint_x=1)) 
         outer_layout.add_widget(top_bar)
         
         center_box = BoxLayout(orientation='vertical', spacing=dp(16), size_hint_y=None, size_hint_x=None, width=dp(300))
@@ -278,8 +256,19 @@ class RegistrationScreen(CosmicScreen):
         self.add_widget(outer_layout)
 
     def open_whatsapp_contact(self, instance):
-        # Triggers international WhatsApp API url format
-        webbrowser.open("https://wa.me/923042458422")
+        # FIX: Android System Native Intent mechanism instead of computer-based webbrowser
+        whatsapp_url = "https://wa.me/923042458422"
+        if platform == 'android':
+            from jnius import cast, autoclass
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            Intent = autoclass('android.content.Intent')
+            Uri = autoclass('android.net.Uri')
+            intent = Intent(Intent.ACTION_VIEW, Uri.parse(whatsapp_url))
+            currentActivity = PythonActivity.mActivity
+            currentActivity.startActivity(intent)
+        else:
+            import webbrowser
+            webbrowser.open(whatsapp_url)
 
     def start_loading(self, instance):
         self.next_btn.text = "PROCESSING..."
@@ -314,7 +303,6 @@ class RegistrationScreen(CosmicScreen):
     def reset_button(self):
         self.next_btn.text = "CONTINUE TO SQUAD MANAGER"
         self.next_btn.disabled = False
-
 
 class PlayersScreen(CosmicScreen):
     def __init__(self, **kwargs):
@@ -456,7 +444,6 @@ class PlayersScreen(CosmicScreen):
         self.save_btn.disabled = False
         self.manager.current = 'main_menu_screen'
 
-
 class MainMenuScreen(CosmicScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -500,7 +487,6 @@ class MainMenuScreen(CosmicScreen):
             "players": USER_TEAM["players"], "reserves": USER_TEAM["reserves"], "photos": USER_TEAM["photos"]
         }
         self.manager.get_screen('teams_registry_screen').show_squad_visual_popup(mock_data)
-
 
 class TeamsRegistryScreen(CosmicScreen):
     def __init__(self, **kwargs):
@@ -601,7 +587,6 @@ class TeamsRegistryScreen(CosmicScreen):
         main_view.add_widget(close_btn)
         pop.open()
 
-
 class PepsiSuperLeagueApp(App):
     def build(self):
         sm = ScreenManager()
@@ -613,3 +598,4 @@ class PepsiSuperLeagueApp(App):
 
 if __name__ == '__main__':
     PepsiSuperLeagueApp().run()
+

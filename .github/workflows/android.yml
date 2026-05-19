@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on:
@@ -9,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup System
         run: |
@@ -26,7 +27,7 @@ jobs:
           buildozer -v android debug
 
       - name: Upload File
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Pepsi-App
           path: bin/*.apk

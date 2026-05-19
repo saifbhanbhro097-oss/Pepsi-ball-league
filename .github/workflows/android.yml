@@ -1,1 +1,33 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup System
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ccache git libffi-dev libssl-dev python3-dev unzip zip zlib1g-dev openjdk-17-jdk
+          pip3 install --user --upgrade pip buildozer "cython<3.0.0"
+
+      - name: Create APK
+        run: |
+          buildozer init
+          sed -i 's/title = My Application/title = Pepsi Super League/' buildozer.spec
+          sed -i 's/# android.permissions = INTERNET/android.permissions = INTERNET/' buildozer.spec
+          sed -i 's/requirements = python3, kivy/requirements = python3, kivy, openssl, requests, urllib3/' buildozer.spec
+          buildozer -v android debug
+
+      - name: Upload File
+        uses: actions/upload-artifact@v3
+        with:
+          name: Pepsi-App
+          path: bin/*.apk
 
